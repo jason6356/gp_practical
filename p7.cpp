@@ -1,4 +1,4 @@
-  
+
 #include <Windows.h>
 #include <gl/GL.h>
 #include <math.h>
@@ -236,7 +236,7 @@ void drawCube(float sz) {
 	glColor3f(1, 0, 0);
 	glTexCoord2f(0.0, 0.5);
 	glVertex3f(0.0f, 0.0f, sz);
-	glTexCoord2f(0.5,0.5);
+	glTexCoord2f(0.5, 0.5);
 	glVertex3f(sz, 0.0f, sz);
 	glTexCoord2f(0.5, 0.0);
 	glVertex3f(sz, 0.0f, 0.0f);
@@ -439,13 +439,12 @@ void drawGluCylinder(float tr, float br, float h) {
 	gluDeleteQuadric(cylinder);				//delete the quadric obj
 }
 
-void display() {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
+GLuint loadTexture(LPCSTR filename) {
 
+	GLuint texture = 0;
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
-	hBMP = (HBITMAP)LoadImage(GetModuleHandle(NULL), "Box.bmp", IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION | LR_LOADFROMFILE);
+	hBMP = (HBITMAP)LoadImage(GetModuleHandle(NULL), filename, IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION | LR_LOADFROMFILE);
 
 	GetObject(hBMP, sizeof(BMP), &BMP);
 
@@ -461,17 +460,39 @@ void display() {
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, BMP.bmWidth, BMP.bmHeight, 0, GL_BGR_EXT, GL_UNSIGNED_BYTE, BMP.bmBits);
 
+	DeleteObject(hBMP);
+	return texture;
+}
 
+void display() {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
 
-	glRotatef(0.5, 0.1, 0.1, 0.1);
+	GLuint textArr[2];
 
-	drawCube(0.5,0.5,0.5);
-
+	glPushMatrix();
+	{
+		glTranslatef(tx, ty, 0.0);
+		glPushMatrix();
+		{
+			textArr[0] = loadTexture("Box.bmp");
+			glRotatef(angle, 0.1, 0.1, 0.1);
+			drawCube(0.5, 0.5, 0.5);
+			glTranslatef(0.5, 0.5, 0.5);
+			textArr[1] = loadTexture("fire.bmp");
+			drawCube(0.5, 0.5, 0.5);
+		}
+		glPopMatrix();
+	}
+	glPopMatrix();
 	glDisable(GL_TEXTURE_2D);
 
-	DeleteObject(hBMP);
+	glDeleteTextures(1, &textArr[0]);
+	glDeleteTextures(1, &textArr[1]);
 
-	glDeleteTextures(1, &texture);
+	angle += 0.5;
+	if (angle >= 360)
+		angle = 0;
 
 }
 
