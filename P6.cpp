@@ -3,7 +3,6 @@
 #include <gl/GL.h>
 #include <math.h>
 #include <gl/GLU.h>
-#include "RGBColor.cpp"
 #pragma comment (lib, "OpenGL32.lib")
 #define WINDOW_TITLE "Practical 5"
 
@@ -32,7 +31,7 @@ float PRangle = 0.0;
 float x = 0.15, y = 0;
 //radius
 float r = 0.2;
-float angle = 0;
+float angle = 0.0;
 
 float noOfTri = 1000;
 float x2 = 0, y2 = 0;
@@ -42,7 +41,8 @@ int qNo = 6;
 
 //Translatetion
 float tx = 0, ty = 0;
-float tSpeed = 0.1;
+float tz = 0.0;
+float tSpeed = 0.5;
 
 //change color
 float red = 1;
@@ -58,35 +58,60 @@ float zArm = 0.0;
 float xArm = 0.0;
 float yArm = 0.0;
 
-RGBColor colors[] = {
-	RGBColor(255,0,0),
-	RGBColor(255,165,0),
-	RGBColor(255,255,0),
-	RGBColor(0,128,0),
-	RGBColor(0,0,255),
-	RGBColor(255,0,255),
-	RGBColor(128,0,128),
-};
-
-
 
 //Intensity of the light source 
-float amb[3] = {1.0,0.0,0.0}; //Red Color ambient light
+float amb[3] = { 1.0,0.0,0.0 }; //Red Color ambient light
 float posA[3] = { 0.0,6.0,0.0 }; //Ambient Pos
+
+
+//Practical Need
 float posD[3] = { 6.0,0.0,0.0 }; //Diffuse Pos
-float dif[3] = { 0.0,1.0,0.0 }; // Green Color diffuse light
+float dif[3] = { 1.0,0.0,0.0 }; // Red Color diffuse light
 
 
 //material color
-float ambM[3] = { 1.0,0.0,0.0 }; //;Red Color ambient material
-float difM[3] = {1.0,0.0,0.0}; // Red color diffuse material
-boolean isAmb = true;
+float ambM[3] = { 0.0,0.0,0.0 }; //;Red Color ambient material
+float difM[3] = { 1.0,1.0,1.0 }; // White color diffuse material
+boolean isAmb = false;
+
+boolean isSphere = false;
+
 
 /*
  * VK_0 - VK_9 are the same as ASCII '0' - '9' (0x30 - 0x39)
  * 0x3A - 0x40 : unassigned
  * VK_A - VK_Z are the same as ASCII 'A' - 'Z' (0x41 - 0x5A)
  */
+void yAxisRotate() {
+	float xOld, yOld, zOld;
+	xOld = posD[0];
+	yOld = posD[1];
+	zOld = posD[2];
+	posD[0] = zOld * sin(angle) + xOld * cos(angle);
+	posD[1] = posD[1];
+	posD[2] = yOld * cos(angle) - xOld * sin(angle);
+}
+
+void xAxisRotate() {
+	float xOld, yOld, zOld;
+	xOld = posD[0];
+	yOld = posD[1];
+	zOld = posD[2];
+	posD[0] = xOld;
+	posD[1] = yOld * cos(angle) - zOld * sin(angle);
+	posD[2] = yOld * sin(angle) + zOld * cos(angle);
+}
+
+void zAxisRotate() {
+	float xOld, yOld, zOld;
+	xOld = posD[0];
+	yOld = posD[1];
+	zOld = posD[2];
+	posD[0] = xOld * cos(angle) - yOld * sin(angle);
+	posD[1] = xOld * sin(angle) + yOld * cos(angle);
+	posD[2] = zOld;
+}
+
 
 LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -98,55 +123,32 @@ LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 
 	case WM_KEYDOWN:
 		if (wParam == VK_ESCAPE) PostQuitMessage(0);
-		else if (wParam == 0x31) qNo = 1;
-		else if (wParam == 0x32) qNo = 2;
-		else if (wParam == VK_LEFT) {
-			tx -= tSpeed;
-			pTx -= tSpeed;
-		}
-		else if (wParam == VK_RIGHT) {
-			tx += tSpeed;
-			pTx += tSpeed;
-		}
+		else if (wParam == 'W') posD[1] += tSpeed;
+		else if (wParam == 'S') posD[1] -= tSpeed;
+		else if (wParam == 'A') posD[0] -= tSpeed;
+		else if (wParam == 'D') posD[0] += tSpeed;
+		else if (wParam == 'E') posD[2] += tSpeed;
+		else if (wParam == 'Q') posD[2] -= tSpeed;
 		else if (wParam == VK_UP) {
-
-			rAngle += rSpeed;
-
-			if (isOrtho) {
-				if (zCord < oFar)
-					zCord += tSpeed;
-			}
-			else
-				if (zCord < pFar / 2)
-					zCord += tSpeed;
+			xAxisRotate();
+			yAxisRotate();
+			zAxisRotate();
+			angle = 2 * PI / 100;
 		}
 		else if (wParam == VK_DOWN) {
-			rAngle -= rSpeed;
-			if (isOrtho) {
-				if (zCord > oNear)
-					zCord -= tSpeed;
-			}
-			else
-				if (zCord > pNear)
-					zCord -= tSpeed;
+			xAxisRotate();
+			yAxisRotate();
+			zAxisRotate();
+			angle = -(2 * PI / 100);
 		}
-		else if (wParam == VK_LEFT) xArm += rSpeed;
-		else if (wParam == VK_RIGHT) xArm -= rSpeed;
-		else if (wParam == 'O') {
-			isOrtho = true;
-			zCord = 0;
+		else if (wParam == VK_SPACE) {
+			posD[0] = 6.0;
+			posD[1] = 0.0;
+			posD[2] = 0.0;
+
 		}
-		else if (wParam == 'P') {
-			isOrtho = false;
-			zCord = 0;
-		}
-		else if (wParam == 'D') {
-			PRangle += 1;
-		}
-		else if (wParam == 'A') {
-			PRangle -= 1;
-		}
-		else if (wParam == VK_SPACE) isAmb = !isAmb;
+		else if (wParam == 'P')
+			isSphere = ~isSphere;
 		break;
 	default:
 		break;
@@ -286,28 +288,7 @@ void cube() {
 	drawCube(-0.5);
 }
 
-void drawPyramid(float size)
-{
-	glLineWidth(3.0);
-	glBegin(GL_LINE_LOOP);
-	//face 1 bottom
-	glColor3f(0.0, 1.0, 1.0);
-	glVertex3f(0.0, 0.0, size);//p1
-	glVertex3f(size, 0.0, size);//go right from p1
-	glVertex3f(size, 0.0, 0.0);//go front from p2
-	glVertex3f(0.0, 0.0, 0.0);//go left from p2
-	glVertex3f(size / 2, size, size / 2); // go up from p2 to center up
 
-	//face 2 top
-	glVertex3f(0.0, 0.0, size); // go from the center up to left back point (p1)
-	glVertex3f(size / 2, size, size / 2); // p1 go back up to center up 
-	glVertex3f(size, 0.0, size); // center up and go to (p2)
-	glVertex3f(size / 2, size, size / 2); // go back up to center up
-	glVertex3f(size, 0.0, 0.0); // center up and go to (p3)
-	glVertex3f(size / 2, size, size / 2); // back to center up
-	glVertex3f(0.0, 0.0, 0.0); // go to p4
-	glEnd();
-}
 
 void drawRec(float sz) {
 	glBegin(GL_LINE_LOOP);
@@ -351,19 +332,6 @@ void drawRec(float sz) {
 	glEnd();
 }
 
-void drawCylinder(double br, double tr, double h) {
-	GLUquadricObj* var = NULL;
-
-	var = gluNewQuadric();
-
-	//glColor3f(0, 0, 1);
-	glRotatef(0.01, 1, 1, 1);
-	gluQuadricDrawStyle(var, GLU_LINE);
-	gluCylinder(var, br, tr, h, 30, 30);
-	gluDeleteQuadric(var);
-
-}
-
 void drawSphere(float r, float sl, float st) {
 	GLUquadricObj* sphere = NULL;			//create quadric obj pointer
 	sphere = gluNewQuadric();				//create the quadric obj
@@ -390,15 +358,44 @@ void drawConeLine(float r, float h) {
 	glLineWidth(3.0);
 }
 
-void drawGluCylinder(float tr, float br, float h) {
-	GLUquadricObj* cylinder = NULL;			//create quadric obj pointer
-	cylinder = gluNewQuadric();				//create the quadric obj
-	gluQuadricDrawStyle(cylinder, GLU_LINE);	//set the draw style
-	gluCylinder(cylinder, tr, br, h, 30, 2);			//draw sphere
-	gluDeleteQuadric(cylinder);				//delete the quadric obj
+void drawCylinder(double br, double tr, double h) {
+
+	GLUquadricObj* cylinder = NULL;
+	cylinder = gluNewQuadric();
+	gluQuadricDrawStyle(cylinder, GLU_FILL); // gl Point , fill , line
+	gluCylinder(cylinder, br, tr, h, 4, 4);
+	gluDeleteQuadric(cylinder);
+
 }
 
+void drawPyramid(float sz) {
+	//glBegin(GL_TRIANGLES);
+	//glVertex3f(0.0f, sz, 0.0f);
+	//glVertex3f(-sz, -sz, -sz);
+	//glVertex3f(sz, -sz, -sz);
 
+	//glVertex3f(0.0f, sz, 0.0f);
+	//glVertex3f(-sz, -sz, sz);
+	//glVertex3f(sz, -sz, sz);
+
+	//glVertex3f(0.0f, sz, 0.0f);
+	//glVertex3f(-sz, -sz, sz);
+	//glVertex3f(-sz, -sz, -sz);
+
+	//glVertex3f(0.0f, sz, 0.0f);
+	//glVertex3f(sz, -sz, sz);
+	//glVertex3f(sz, -sz, -sz);
+	//glEnd();
+
+	//glBegin(GL_QUADS);
+	//glVertex3f(-sz, -sz, sz);
+	//glVertex3f(-sz, -sz, -sz);
+	//glVertex3f(sz, -sz, -sz);
+	//glVertex3f(sz, -sz, sz);
+	//glEnd();
+	// Draw Pyramid by using Cylinder (without covering bottom)
+	drawCylinder(0.0, sz, sz);
+}
 
 
 void projection() {
@@ -420,45 +417,61 @@ void projection() {
 
 void lightning() {
 	glEnable(GL_LIGHTING); // turn on lighting for the whole scene
-
-	glLightfv(GL_LIGHT0, GL_AMBIENT, amb);
-	glLightfv(GL_LIGHT0, GL_POSITION, posA);
-	glEnable(GL_LIGHT0);
-
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, dif);
-	glLightfv(GL_LIGHT1, GL_POSITION, posD);
-	glEnable(GL_LIGHT1);
+	glPushMatrix();
+	glTranslatef(tx, ty, tz);
+		if (isAmb) {
+			glLightfv(GL_LIGHT0, GL_AMBIENT, amb);
+			glLightfv(GL_LIGHT0, GL_POSITION, posA);
+			glEnable(GL_LIGHT0);
+		}
+		else {
+			glLightfv(GL_LIGHT1, GL_DIFFUSE, dif);
+			glLightfv(GL_LIGHT1, GL_POSITION, posD);
+			glEnable(GL_LIGHT1);
+		}
+	glPopMatrix();
 }
 
 void display() {
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(1, 1, 1, 0);
-	
+
 	projection(); //projection
 	lightning(); //lightning
-	
+
 	//translation -> tx tx
 	//rotation -> ry
 
 	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+	//glLoadIdentity();
 	glPushMatrix();
 	{
-		glTranslatef(0, 0, zCord); 
-		glColor3f(0, 0, 1.0);
+		glTranslatef(0, 0, zCord);
+		//glColor3f(0, 0, 1.0);
 		if (isAmb) {
 			glMaterialfv(GL_FRONT, GL_AMBIENT, ambM);
 		}
 		else {
 			glMaterialfv(GL_FRONT, GL_DIFFUSE, difM);
+
 		}
 
-		drawSphere(3.0, 100, 100);
+		glPushMatrix();
+			glColor3f(1, 0, 0);
+			glTranslatef(posD[0], posD[1], posD[2]);
+			drawCube(0.5);
+		glPopMatrix();
+		if(isSphere)
+			drawSphere(3, 100, 100);
+		else {
+			glPushMatrix();
+			glRotatef(90, 1, 0, 1);
+			drawPyramid(3.0);
+			glPopMatrix();
+		}
 	}
 	glPopMatrix();
-
-
 }
 
 
