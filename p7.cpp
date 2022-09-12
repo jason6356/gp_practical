@@ -399,7 +399,7 @@ void drawCylinder(double br, double tr, double h) {
 
 	//glColor3f(0, 0, 1);
 	glRotatef(0.01, 1, 1, 1);
-	gluQuadricDrawStyle(var, GLU_LINE);
+	gluQuadricDrawStyle(var, GLU_FILL);
 	gluCylinder(var, br, tr, h, 30, 30);
 	gluDeleteQuadric(var);
 
@@ -434,7 +434,8 @@ void drawConeLine(float r, float h) {
 void drawGluCylinder(float tr, float br, float h) {
 	GLUquadricObj* cylinder = NULL;			//create quadric obj pointer
 	cylinder = gluNewQuadric();				//create the quadric obj
-	gluQuadricDrawStyle(cylinder, GLU_LINE);	//set the draw style
+	gluQuadricDrawStyle(cylinder, GLU_FILL);	//set the draw style
+	gluQuadricTexture(cylinder, true);
 	gluCylinder(cylinder, tr, br, h, 30, 2);			//draw sphere
 	gluDeleteQuadric(cylinder);				//delete the quadric obj
 }
@@ -477,7 +478,7 @@ void display() {
 		{
 			textArr[0] = loadTexture("Box.bmp");
 			glRotatef(angle, 0.1, 0.1, 0.1);
-			drawCube(0.5, 0.5, 0.5);
+			drawGluCylinder(0.2, 0.2, 0.8);
 			glTranslatef(0.5, 0.5, 0.5);
 			textArr[1] = loadTexture("fire.bmp");
 			drawCube(0.5, 0.5, 0.5);
